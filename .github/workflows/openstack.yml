@@ -116,7 +116,7 @@ jobs:
             key: ${{ secrets.SSH_PRIVATE_KEY }}
             port: '22'
             script: |
-              cp -pv /opt/9be575a17bf12bef2dc46add9451f4ab89e36d7b/elevate-cpanel /scripts/elevate-cpanel
+              cp -pv /opt/elevate/elevate-cpanel /scripts/elevate-cpanel
               chmod -v +x /scripts/elevate-cpanel
               /scripts/elevate-cpanel --skip-cpanel-version-check --non-interactive --start &
               /scripts/elevate-cpanel --log &
