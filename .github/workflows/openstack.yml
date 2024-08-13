@@ -118,6 +118,7 @@ jobs:
             script: |
               cp -pv /opt/elevate/elevate-cpanel /scripts/elevate-cpanel
               chmod -v +x /scripts/elevate-cpanel
+              /usr/local/cpanel/cpkeyclt
               /scripts/elevate-cpanel --skip-cpanel-version-check --non-interactive --start &
               /scripts/elevate-cpanel --log &
               /scripts/elevate-cpanel --log | awk '/Rebooting into stage 2 of 5/ { print | "exit" }'
