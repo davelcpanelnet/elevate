@@ -272,7 +272,7 @@ jobs:
       outputs:
         VM_IP: ${{ needs.wait_for_final_reboot.outputs.VM_IP }}
       steps:
-        - name: Verify OS Upgraded and Elevate Complete
+        - name: Verify End Result Integration Tests
           uses: appleboy/ssh-action@v1.0.3
           with:
             host: ${{ needs.wait_for_final_reboot.outputs.VM_IP }}
@@ -282,7 +282,7 @@ jobs:
             timeout: 5m
             command_timeout: 1m
             script: |
-              /usr/local/cpanel/3rdparty/bin/prove -lvm /opt/elevate/t/integration/*
+              /usr/local/cpanel/3rdparty/bin/yath test -v -j8 t/integration/*.t
 
     terraform_openstack_destroy:
       runs-on: self-hosted
