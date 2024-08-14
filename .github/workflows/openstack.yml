@@ -155,7 +155,7 @@ jobs:
               /scripts/elevate-cpanel --log &
               REGEX="Rebooting into stage 3 of 5"
               RETVAL=1
-              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot Search: Attempt ${RETRIES} ..."; sleep 1; done
+              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
     
     wait_for_stage_3_reboot:
       runs-on: self-hosted
@@ -188,7 +188,7 @@ jobs:
               /scripts/elevate-cpanel --log &
               REGEX="Rebooting into stage 4 of 5"
               RETVAL=1
-              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot Search: Attempt ${RETRIES} ..."; sleep 1; done
+              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
 
     wait_for_stage_4_reboot:
       runs-on: self-hosted
@@ -221,7 +221,7 @@ jobs:
               /scripts/elevate-cpanel --log &
               REGEX="Rebooting into stage 5 of 5"
               RETVAL=1
-              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot Search: Attempt ${RETRIES} ..."; sleep 1; done
+              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
 
     wait_for_stage_5_reboot:
       runs-on: self-hosted
@@ -253,7 +253,7 @@ jobs:
               /scripts/elevate-cpanel --log &
               REGEX="Doing final reboot"
               RETVAL=1
-              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot Search: Attempt ${RETRIES} ..."; sleep 1; done
+              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
   
     wait_for_final_reboot:
       runs-on: self-hosted
