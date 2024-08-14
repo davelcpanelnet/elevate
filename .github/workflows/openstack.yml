@@ -1,4 +1,12 @@
-on: [push]
+on:
+  push:
+    branches:
+      - "*"
+      - '!docs'
+    tags-ignore:
+      - "*"
+  pull_request:
+  workflow_dispatch:
 
 env:
   TF_VAR_user: ${{ secrets.OS_USERNAME }}
@@ -14,7 +22,7 @@ env:
 
 jobs: 
     terraform_openstack_create:
-        runs-on: self-hosted
+        runs-on: cPanelInternal
         defaults:
           run:
             working-directory: "./.github/workflows/openstack/terraform"
@@ -66,7 +74,7 @@ jobs:
             overwrite: true
 
     clone_elevate_repo:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: terraform_openstack_create
       outputs:
         VM_IP: ${{ needs.terraform_openstack_create.outputs.VM_IP }}
@@ -103,7 +111,7 @@ jobs:
               git status
 
     start_elevate:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: clone_elevate_repo
       outputs:
         VM_IP: ${{ needs.clone_elevate_repo.outputs.VM_IP }}
@@ -124,7 +132,7 @@ jobs:
               /scripts/elevate-cpanel --log | awk '/Rebooting into stage 2 of 5/ { print | "exit" }'
 
     wait_for_stage_2_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: start_elevate
       outputs:
         VM_IP: ${{ needs.start_elevate.outputs.VM_IP }}
@@ -135,7 +143,7 @@ jobs:
             ./ssh_retry.sh ${{ needs.start_elevate.outputs.VM_IP }}
 
     watch_for_stage_3_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: wait_for_stage_2_reboot
       outputs:
         VM_IP: ${{ needs.wait_for_stage_2_reboot.outputs.VM_IP }}
@@ -158,7 +166,7 @@ jobs:
               while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
     
     wait_for_stage_3_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: watch_for_stage_3_reboot
       outputs:
         VM_IP: ${{ needs.watch_for_stage_3_reboot.outputs.VM_IP }}
@@ -169,7 +177,7 @@ jobs:
             ./ssh_retry.sh ${{ needs.watch_for_stage_3_reboot.outputs.VM_IP }}
 
     watch_for_stage_4_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: wait_for_stage_3_reboot
       outputs:
         VM_IP: ${{ needs.wait_for_stage_3_reboot.outputs.VM_IP }}
@@ -191,7 +199,7 @@ jobs:
               while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
 
     wait_for_stage_4_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: watch_for_stage_4_reboot
       outputs:
         VM_IP: ${{ needs.watch_for_stage_4_reboot.outputs.VM_IP }}
@@ -202,7 +210,7 @@ jobs:
             ./ssh_retry.sh ${{ needs.watch_for_stage_4_reboot.outputs.VM_IP }}
 
     watch_for_stage_5_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: wait_for_stage_4_reboot
       outputs:
         VM_IP: ${{ needs.wait_for_stage_4_reboot.outputs.VM_IP }}
@@ -224,7 +232,7 @@ jobs:
               while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
 
     wait_for_stage_5_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: watch_for_stage_5_reboot
       outputs:
         VM_IP: ${{ needs.watch_for_stage_5_reboot.outputs.VM_IP }}
@@ -235,7 +243,7 @@ jobs:
             ./ssh_retry.sh ${{ needs.watch_for_stage_5_reboot.outputs.VM_IP }}
 
     watch_for_final_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: wait_for_stage_5_reboot
       outputs:
         VM_IP: ${{ needs.wait_for_stage_5_reboot.outputs.VM_IP }}
@@ -256,7 +264,7 @@ jobs:
               while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
   
     wait_for_final_reboot:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: watch_for_final_reboot
       outputs:
         VM_IP: ${{ needs.watch_for_final_reboot.outputs.VM_IP }}
@@ -267,7 +275,7 @@ jobs:
             ./ssh_retry.sh ${{ needs.watch_for_final_reboot.outputs.VM_IP }}
 
     verify_upgraded_os:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: wait_for_final_reboot
       outputs:
         VM_IP: ${{ needs.wait_for_final_reboot.outputs.VM_IP }}
@@ -285,7 +293,7 @@ jobs:
               /usr/local/cpanel/3rdparty/bin/yath test -v -j8 t/integration/*.t
 
     terraform_openstack_destroy:
-      runs-on: self-hosted
+      runs-on: cPanelInternal
       needs: verify_upgraded_os
       defaults:
         run:
