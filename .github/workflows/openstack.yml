@@ -84,7 +84,7 @@ jobs:
       outputs:
         VM_IP: ${{ needs.terraform_openstack_create.outputs.VM_IP }}
       steps:
-        - name: Checking out Repo and Commit
+        - name: Checkout Repo and Commit
           if: github.event_name != 'pull_request'
           uses: appleboy/ssh-action@v1.0.3
           with:
