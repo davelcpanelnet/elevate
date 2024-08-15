@@ -41,11 +41,6 @@ jobs:
             terraform fmt -check
           continue-on-error: true
 
-        - name: DEBUG Check Env Var
-          id: debugvar
-          run: |
-            env | grep -i auth
-
         - name: Terraform Init
           id: init
           run: |
