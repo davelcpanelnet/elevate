@@ -135,6 +135,8 @@ jobs:
             port: '22'
             script: |
               cp -pv /opt/elevate/elevate-cpanel /scripts/elevate-cpanel
+              cp -pv /opt/elevate/.github/workflows/openstack/status_marker.sh /scripts/status_marker.sh
+              cp -pv /opt/elevate/.github/workflows/openstack/reboot_watch.sh /scripts/reboot_watch.sh
               chmod -v +x /scripts/elevate-cpanel
               /usr/local/cpanel/cpkeyclt
               /scripts/elevate-cpanel --non-interactive --start &
@@ -169,11 +171,9 @@ jobs:
             command_timeout: 20m
             debug: true
             script: |
-              ./status_marker.sh 3
+              /scripts/status_marker.sh 3
               /scripts/elevate-cpanel --log &
-              REGEX="Rebooting into stage 3 of 5"
-              RETVAL=1
-              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
+              REGEX="Rebooting into stage 3 of 5" RETVAL=1 /scripts/reboot_watch.sh
     
     wait_for_stage_3_reboot:
       runs-on: self-hosted
@@ -202,11 +202,9 @@ jobs:
             timeout: 30m
             command_timeout: 20m
             script: |
-              ./status_marker.sh 4
+              /scripts/status_marker.sh 4
               /scripts/elevate-cpanel --log &
-              REGEX="Rebooting into stage 4 of 5"
-              RETVAL=1
-              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
+              REGEX="Rebooting into stage 4 of 5" RETVAL=1 /scripts/reboot_watch.sh
 
     wait_for_stage_4_reboot:
       runs-on: self-hosted
@@ -235,11 +233,9 @@ jobs:
             timeout: 30m
             command_timeout: 20m
             script: |
-              ./status_marker.sh 5
+              /scripts/status_marker.sh 5
               /scripts/elevate-cpanel --log &
-              REGEX="Rebooting into stage 5 of 5"
-              RETVAL=1
-              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
+              REGEX="Rebooting into stage 5 of 5" RETVAL=1 /scripts/reboot_watch.sh
 
     wait_for_stage_5_reboot:
       runs-on: self-hosted
@@ -269,9 +265,7 @@ jobs:
             command_timeout: 20m
             script: |
               /scripts/elevate-cpanel --log &
-              REGEX="Doing final reboot"
-              RETVAL=1
-              while [ $RETVAL -ne 0 ]; do grep "${REGEX}" /var/log/elevate-cpanel.log; RETVAL=$?; [ $RETVAL -eq 0 ] && echo "## [INFO] SUCCESS: Reboot text found in /var/log/elevate-cpanel.log  ##" && exit 0; RETRIES=$((RETRIES+1)); [ $RETVAL -ne 0 ] && echo "## [DEBUG]: Retrying Reboot REGEX Search: Attempt ${RETRIES} ..."; sleep 1; done
+              REGEX="Doing final reboot" RETVAL=1 /scripts/reboot_watch.sh
   
     wait_for_final_reboot:
       runs-on: self-hosted
@@ -300,7 +294,7 @@ jobs:
             timeout: 5m
             command_timeout: 1m
             script: |
-              /usr/local/cpanel/3rdparty/bin/yath test -v -j8 t/integration/*.t
+              /usr/local/cpanel/3rdparty/bin/prove -lvm t/integration/*.t
 
     terraform_openstack_destroy:
       runs-on: self-hosted
