@@ -1,6 +1,6 @@
 # Define required providers
 terraform {
-required_version = ">= 0.14.0"
+  required_version = ">= 0.14.0"
   required_providers {
     openstack = {
       source  = "terraform-provider-openstack/openstack"
@@ -44,7 +44,7 @@ resource "random_string" "keyname" {
 }
 
 resource "openstack_compute_keypair_v2" "tf_remote_key" {
-  name   = "${random_string.keyname.result}-deletethis"
+  name       = "${random_string.keyname.result}-deletethis"
   public_key = tls_private_key.ssh.public_key_openssh
 }
 
@@ -53,7 +53,7 @@ resource "openstack_compute_instance_v2" "elevatevm" {
   image_id    = data.openstack_images_image_ids_v2.images.ids[0]
   flavor_name = var.flavor_name
   key_pair    = openstack_compute_keypair_v2.tf_remote_key.name
-  user_data = "${data.template_cloudinit_config.config.rendered}"
+  user_data   = data.template_cloudinit_config.config.rendered
   network {
     name = "hou-prod-external"
   }
@@ -70,12 +70,12 @@ resource "openstack_compute_instance_v2" "elevatevm" {
     EOF
     ]
     connection {
-        type        = "ssh"
-        agent       = "false"
-        host        = self.access_ip_v4
-        user        = "root"
-        script_path = "/root/elevate_bootstrap"
-        private_key = tls_private_key.ssh.private_key_pem
+      type        = "ssh"
+      agent       = "false"
+      host        = self.access_ip_v4
+      user        = "root"
+      script_path = "/root/elevate_bootstrap"
+      private_key = tls_private_key.ssh.private_key_pem
     }
   }
 }
