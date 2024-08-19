@@ -294,7 +294,7 @@ jobs:
             timeout: 5m
             command_timeout: 1m
             script: |
-              /usr/local/cpanel/3rdparty/bin/prove -lvm t/integration/*.t
+              /usr/local/cpanel/3rdparty/bin/prove -lvm /opt/elevate/t/integration/*.t
 
     terraform_openstack_destroy:
       runs-on: self-hosted
