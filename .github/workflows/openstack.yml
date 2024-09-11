@@ -150,10 +150,16 @@ jobs:
       outputs:
         VM_IP: ${{ needs.setup_integration_checks.outputs.VM_IP }}
       steps:
+        - name: Download VM IP
+          uses: actions/download-artifact@v4
+          with:
+            name: ${{ github.workspace }}/${{ vars.GITHUB_RUN_ID }}-vm_ip
+            path: ${{ github.workspace }}/${{ vars.GITHUB_RUN_ID }}-vm_ip
+          run: echo "ARTIFACT_IP=$(cat ${{ github.workspace }}/${{ vars.GITHUB_RUN_ID }}-vm_ip) >> "$GITHUB_OUTPUT"
         - name: Starting Elevate
           uses: appleboy/ssh-action@v1.0.3
           with:
-            host: ${{ needs.setup_integration_checks.outputs.VM_IP }}
+            host: ${{ env.ARTIFACT_IP }}
             username: 'root'
             key: ${{ secrets.SSH_PRIVATE_KEY }}
             port: '22'
