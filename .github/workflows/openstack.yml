@@ -303,7 +303,7 @@ jobs:
             command_timeout: 30m
             script: |
               /scripts/elevate-cpanel --log &
-              REGEX="Doing final reboot" RETVAL=1 /scripts/reboot_watch
+              REGEX="Great SUCCESS! Your upgrade to AlmaLinux 8 is complete" RETVAL=1 /scripts/reboot_watch
   
     wait_for_final_reboot:
       runs-on: self-hosted
