@@ -160,7 +160,7 @@ jobs:
               /usr/local/cpanel/cpkeyclt
               /scripts/elevate-cpanel --non-interactive --start &
               /scripts/elevate-cpanel --log &
-              /scripts/elevate-cpanel --log | awk '/Rebooting into stage 2 of 5/ { print | "exit" }'
+              REGEX="Rebooting into stage 2 of 5" RETVAL=1 /scripts/reboot_watch
 
     wait_for_stage_2_reboot:
       runs-on: self-hosted
