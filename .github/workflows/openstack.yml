@@ -155,6 +155,7 @@ jobs:
           with:
             name: ${{ github.workspace }}/${{ vars.GITHUB_RUN_ID }}-vm_ip
             path: ${{ github.workspace }}/${{ vars.GITHUB_RUN_ID }}-vm_ip
+        - name: ARTIFACT_IP to ENV
           run: echo "ARTIFACT_IP=$(cat ${{ github.workspace }}/${{ vars.GITHUB_RUN_ID }}-vm_ip) >> "$GITHUB_OUTPUT"
         - name: Starting Elevate
           uses: appleboy/ssh-action@v1.0.3
