@@ -10,6 +10,19 @@ use POSIX;
 my $RETVAL  = 1;
 my $RETRIES = 0;
 
+# Verify REGEX isn't already in the log before we go into tail mode.  The logodump here is sgnificantly faster than File::Tail.
+
+open LOGFILE, ELEVATE_LOG_PATH;
+my @log = <LOGFILE>;
+close LOGFILE;
+
+# Jump if it's found.
+
+if ( grep { /${REGEX}/m } @log ) {
+    _success_message();
+    exit 0;
+}
+
 while ( $RETVAL != 0 ) {
     _check_elevate_log_for_regex( ELEVATE_LOG_PATH, ${REGEX}, $RETRIES );
 }
@@ -17,14 +30,18 @@ while ( $RETVAL != 0 ) {
 sub _check_elevate_log_for_regex {
     my ( $filepath, $REGEX, $RETRIES ) = @_;
 
-    my $time = POSIX::strftime( "%Y-%m-%d %H:%M:%S", localtime );
-
     $file = File::Tail->new( name => $filepath, maxinterval => 1, adjustafter => 7, interval => 1 );
     while ( defined( $line = $file->read ) ) {
         if ( grep { /$REGEX/m } $line ) {
-            print "## [$time] [INFO]: SUCCESS: Reboot regex ( $REGEX ) found in /var/log/elevate-cpanel.log  ##\n";
+            _success_message();
             exit 0;
         }
         $RETRIES++;
     }
+}
+
+sub _success_message {
+    my $time = POSIX::strftime( "%Y-%m-%d %H:%M:%S", localtime );
+    print "## [$time] [INFO]: SUCCESS: Reboot regex ( $REGEX ) found in /var/log/elevate-cpanel.log  ##\n";
+    return 0;
 }
