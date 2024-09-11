@@ -159,18 +159,38 @@ jobs:
               chmod -v +x /scripts/elevate-cpanel
               /usr/local/cpanel/cpkeyclt
               /scripts/elevate-cpanel --non-interactive --start &
-              REGEX="Starting stage 1 of 5" RETVAL=1 /scripts/reboot_watch
 
-    wait_for_stage_2_reboot:
+    watch_for_stage_2_reboot:
       runs-on: self-hosted
       needs: start_elevate
       outputs:
         VM_IP: ${{ needs.start_elevate.outputs.VM_IP }}
       steps:
+        - name: Monitor Elevate for Reboot from Stage 1 into Stage 2
+          uses: appleboy/ssh-action@v1.0.3
+          with:
+            host: ${{ needs.start_elevate.outputs.VM_IP }}
+            username: 'root'
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            port: '22'
+            timeout: 60m
+            command_timeout: 30m
+            debug: true
+            script: |
+              /scripts/status_marker 1
+              /scripts/elevate-cpanel --log &
+              REGEX="/usr/bin/systemctl start elevate-cpanel.service" RETVAL=1 /scripts/reboot_watch
+
+    wait_for_stage_2_reboot:
+      runs-on: self-hosted
+      needs: watch_for_stage_2_reboot
+      outputs:
+        VM_IP: ${{ needs.watch_for_stage_2_reboot.outputs.VM_IP }}
+      steps:
         - name: Wait For VM to Come Back From Stage 2 Reboot
           working-directory: "./.github/workflows/openstack/"
           run: |
-            ./ssh_retry ${{ needs.start_elevate.outputs.VM_IP }}
+            ./ssh_retry ${{ needs.watch_for_stage_2_reboot.outputs.VM_IP }}
 
     watch_for_stage_3_reboot:
       runs-on: self-hosted
