@@ -34,7 +34,6 @@ sub _check_elevate_log_for_regex {
     while ( defined( $line = $file->read ) ) {
         if ( grep { /$REGEX/m } $line ) {
             _success_message();
-            exit 0;
         }
         $RETRIES++;
     }
@@ -43,5 +42,5 @@ sub _check_elevate_log_for_regex {
 sub _success_message {
     my $time = POSIX::strftime( "%Y-%m-%d %H:%M:%S", localtime );
     print "## [$time] [INFO]: SUCCESS: Reboot regex ( $REGEX ) found in /var/log/elevate-cpanel.log  ##\n";
-    return 0;
+    exit 0;
 }
