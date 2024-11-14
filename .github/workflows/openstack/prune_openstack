@@ -1,84 +1,90 @@
-#!/usr/bin/env bash
+#!/usr/bin/env perl
 
-export OS_AUTH_TYPE=v3applicationcredential
-export OS_AUTH_URL=https://keystone.hou-01.cloud.prod.cpanel.net:5000/v3
-export OS_IDENTITY_API_VERSION=3
-export OS_REGION_NAME="RegionOne"
-export OS_INTERFACE=public
+use POSIX ();
 
-# Confs
-VM_NAME="elevate.github.cpanel.net"
-KEY_NAME="deletethis"
+use constant OS_AUTH_TYPE            => 'v3applicationcredential';
+use constant OS_AUTH_URL             => 'https://keystone.hou-01.cloud.prod.cpanel.net:5000/v3';
+use constant OS_IDENTITY_API_VERSION => '3';
+use constant OS_REGION_NAME          => 'RegionOne';
+use constant OS_INTERFACE            => 'public';
 
-# two hours ago
-HAMMER_TIME=$(date -d '-2 hour' --utc +"%Y-%m-%dT%H:%M:%SZ")
+use constant OS_APPLICATION_CREDENTIAL_ID     => $ENV{OS_APPLICATION_CREDENTIAL_ID};
+use constant OS_APPLICATION_CREDENTIAL_SECRET => $ENV{OS_APPLICATION_CREDENTIAL_SECRET};
 
-get_elevatebcl_instances () {
-    LIST=$(openstack server list -f json --no-name-lookup | jq -r .[].ID)
-    rm id_created_name.txt > /dev/null 2>&1
-    while IFS= read -r VM; do
-        openstack server show -f json "$VM" | jq -r '.id + "," + .created + "," + .name' | grep $VM_NAME >> id_created_name.txt
-    done <<< "$LIST"
+# The should ultimately end up as secrets for repo reusability esported into env like the APPLICATION info
+use constant KEY_NAME => "deletethis";
+use constant VM_NAME  => "elevate.github.cpanel.net";
+
+my $openstack_path = "/usr/bin/openstack" if -x "/usr/bin/openstack";
+die "No Openstack CLI binary installed."  if !length $openstack_path;
+
+# two hours ago - 7200 seconds
+my $time_offset = 7200;
+my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) = gmtime( time - $time_offset );
+my $hammer_time = POSIX::strftime( "%Y-%m-%dT%H:%M:%SZ", $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst );
+
+remove_stale_instances();
+
+remove_stale_keys();
+
+sub get_keys {
+    my $keys = {};
+
+    my @list = split( '\n', `openstack keypair list -f json  | jq -r .[].Name` );
+
+    foreach my $key_name (@list) {
+        my $created_cmd = qq{ $openstack_path keypair show -f json "$key_name" | jq -r '.id + "," + .created_at + "," + .name' };
+        ( $keys->{$key_name}->{'id'}, $keys->{$key_name}->{'created_on'}, $keys->{$key_name}->{'name'} ) = split( ',', _run_cmd($created_cmd) );
+    }
+
+    return $keys;
 }
 
-remove_stale_instances () {
-    echo "HAMMERTIME: $HAMMER_TIME"
-    while IFS="," read -r ID CREATED_DATE NAME
-    do
-        if [[ $CREATED_DATE < $HAMMER_TIME ]];
-        then
-            echo "deleting: $ID,$CREATED_DATE,$NAME"
-            openstack server delete "$ID"
-        fi
-    done < <(cat id_created_name.txt)
+sub get_instances {
+    my $instances = {};
+
+    my @list = split( '\n', eval { `openstack server list -f json --no-name-lookup | jq -r .[].ID` } );
+
+    foreach my $VM (@list) {
+        my $created_cmd = qq{ $openstack_path server show -f json "$VM" | jq -r '.id + "," + .created + "," + .name' };
+        ( $instances->{$VM}->{'id'}, $instances->{$VM}->{'created_on'}, $instances->{$VM}->{'name'} ) = split( ',', _run_cmd($created_cmd) );
+    }
+
+    return $instances;
 }
 
-get_keys () {
-    LIST=$(openstack keypair list -f json  | jq -r .[].Name)
-    rm keyid_created_name.txt > /dev/null 2>&1
-    while IFS= read -r KEYPAIR; do
-        openstack keypair show -f json "$KEYPAIR" | jq -r '.id + "," + .created_at + "," + .name' | grep $KEY_NAME >> keyid_created_name.txt
-    done <<< "$LIST"
+sub remove_stale_keys {
+    my $keys = get_keys();
+
+    my @list = grep { $_->{'name'} =~ /${\KEY_NAME}/ } map { $keys->{$_} } keys %{$keys};
+
+    foreach my $key (@list) {
+        if ( $key->{'created_on'} < $hammer_time ) {
+            print "deleting: Key ID: $key->{'name'}, created_on: $key->{'created_on'}, hammer_time: $hammer_time\n";
+            _run_cmd("$openstack_path keypair delete $key->{'id'}");
+        }
+    }
 }
 
-remove_stale_keys () {
-    echo "HAMMERTIME: $HAMMER_TIME"
-    while IFS="," read -r ID CREATED_DATE NAME
-    do
-        if [[ $CREATED_DATE < $HAMMER_TIME ]];
-        then
-            echo "deleting: $ID,$CREATED_DATE,$NAME"
-            openstack keypair delete "$ID"
-        fi
-    done < <(cat keyid_created_name.txt)
+sub remove_stale_instances {
+    my $instances = get_instances();
+
+    my @list = grep { $_->{'name'} =~ /${\VM_NAME}/ } map { $instances->{$_} } keys %{$instances};
+
+    foreach my $vm (@list) {
+        if ( $vm->{'created_on'} < $hammer_time ) {
+            print "deleting: VM ID: $vm->{'name'}, created_on: $vm->{'created_on'}, hammer_time: $hammer_time\n";
+            _run_cmd("$openstack_path server delete $vm->{'id'}");
+        }
+    }
 }
 
-get_volumes () {
-    rm volume_ids.txt > /dev/null 2>&1
-    openstack volume list | grep packer  | grep available | awk '{print $2}' >> volume_ids.txt
+sub _run_cmd {
+    my $cmd = shift;
+
+    my $out = `$cmd`;
+
+    !length $? ? die $? : return $out;
+
+    return 1;
 }
-
-remove_volumes () {
-    while IFS= read -r ID; do
-        openstack volume delete "$ID" || true
-    done < <(cat volume_ids.txt)
-}
-
-cleanup () {
-    rm -fv id_created_name.txt
-    rm -fv keyid_created_name.txt
-}
-
-# prune VMs
-get_elevatebcl_instances
-remove_stale_instances
-# prune keys
-get_keys
-remove_stale_keys
-# prune volumes
-get_volumes
-remove_volumes
-# cleanup
-cleanup
-
-exit 0;
