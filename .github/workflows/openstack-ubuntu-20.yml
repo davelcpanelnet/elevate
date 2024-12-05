@@ -1,14 +1,17 @@
 name: "Test Run: ubuntu-20.04"
 
 on:
-  push:
-    branches:
-      - "main"
-      - '!docs'
-    tags-ignore:
-      - "*"
-  pull_request:
   workflow_dispatch:
+    inputs:
+      message:
+        description: 'Build description CentOS 7'
+
+  workflow_run:
+    workflows: ["TestSuite"]
+    types:
+      - completed
+  
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-openstack-ubuntu-20.04
@@ -31,13 +34,10 @@ env:
   TF_VAR_os_project_name: ${{ secrets.OS_PROJECT_NAME }}
   TF_VAR_os_region_name: ${{ secrets.OS_REGION_NAME }}
   TF_VAR_os_username: ${{ secrets.OS_USERNAME }}
-  tf_working_directory: "${{ github.workspace }}/.github/workflows/openstack/ubuntu-20.04"
+  tf_working_directory: "${{ github.workspace }}/.github/workflows/openstack/centos-7"
 
 jobs: 
-    testsuite:
-      uses: ./.github/workflows/testsuite.yml
     terraform_openstack_create:
-        needs: [testsuite]
         runs-on: self-hosted
         defaults:
           run:
@@ -215,7 +215,6 @@ jobs:
               cp -pv /opt/${REPODIR}/.github/workflows/openstack/status_marker /scripts/status_marker
               cp -pv /opt/${REPODIR}/.github/workflows/openstack/reboot_watch /scripts/reboot_watch
               chmod -v +x /scripts/elevate-cpanel
-              apt-get update
               until /usr/local/cpanel/cpkeyclt; do echo "Retrying /usr/local/cpanel/cpkeyct until it passes..."; sleep 5; done
               /scripts/elevate-cpanel --non-interactive --skip-cpanel-version-check --start &
               exit 0
